@@ -1,0 +1,500 @@
+/* ================================================================
+   CRIMSON STRIKER — Estilos responsivos
+   Estrategia: el canvas siempre mantiene 800:600 y se escala vía
+   CSS. Los elementos HTML overlay usan clamp() para que sus fuentes
+   y tamaños se adapten al ancho del viewport sin romper el layout.
+   ================================================================ */
+
+:root {
+  --bg: #111;
+  --bg-deep: #0a0a0c;
+  --crimson: #ff2741;
+  --crimson-soft: #ff5b6e;
+  --crimson-dim: #5c0f1c;
+  --cyan: #2ee6ff;
+  --gold: #ffd700;
+  --panel-bg: rgba(14,14,17,0.85);
+  --panel-border: rgba(255,39,65,0.35);
+  --text-light: #f3f4f7;
+  --text-dim: #9a9ba6;
+  --font-display: 'Orbitron', sans-serif;
+  --font-body: 'Rajdhani', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; }
+
+body {
+  background: var(--bg);
+  background-image: radial-gradient(circle at 50% 20%, #1a1a1f 0%, #0a0a0c 70%);
+  color: var(--text-light);
+  font-family: var(--font-body);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;    /* Altura real en móvil (excluye barra del navegador) */
+  overflow: hidden;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* ── Contenedor principal ─────────────────────────────────────── */
+.game-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  gap: clamp(6px, 1.5vh, 14px);
+  padding: clamp(4px, 1.5vw, 16px);
+}
+
+/* ── Título ───────────────────────────────────────────────────── */
+.game-title { text-align: center; }
+
+.game-title h1 {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(1.2rem, 3.5vw, 2rem);
+  letter-spacing: clamp(3px, 1vw, 6px);
+  color: var(--text-light);
+  text-shadow:
+    0 0 6px rgba(255,39,65,0.9),
+    0 0 18px rgba(255,39,65,0.55),
+    0 0 38px rgba(255,39,65,0.3);
+  line-height: 1.05;
+}
+.game-title h1 span { display: block; color: var(--crimson); font-size: 1.05em; }
+
+.tagline {
+  margin-top: 3px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  letter-spacing: clamp(2px, 0.8vw, 4px);
+  font-size: clamp(0.6rem, 1.5vw, 0.75rem);
+  color: var(--text-dim);
+}
+
+/* ── Marco del canvas ────────────────────────────────────────── */
+/* width usa min() para no superar 800px ni el ancho disponible.
+   aspect-ratio calcula el alto automáticamente. */
+.canvas-frame {
+  position: relative;
+  width: min(800px, 100vw - 8px);
+  aspect-ratio: 800 / 600;
+  border: 1px solid var(--panel-border);
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.6),
+    0 0 30px rgba(255,39,65,0.18),
+    inset 0 0 40px rgba(0,0,0,0.6);
+  background: var(--bg-deep);
+  flex-shrink: 0;
+}
+
+#gameCanvas {
+  display: block;
+  width: 100%; height: 100%;
+  touch-action: none;  /* evita scroll/zoom al tocar el canvas */
+}
+
+/* En landscape muy estrecho limitamos el alto para que el canvas
+   no sea mayor que el viewport. El ancho se recalcula por aspect-ratio. */
+@media (max-height: 520px) and (orientation: landscape) {
+  .canvas-frame {
+    width: auto;
+    height: min(600px, 96vh);
+  }
+}
+
+/* ── Esquinas decorativas ────────────────────────────────────── */
+.corner {
+  position: absolute;
+  width: clamp(14px, 2.5vw, 22px);
+  height: clamp(14px, 2.5vw, 22px);
+  border: clamp(2px, 0.4vw, 3px) solid var(--crimson);
+  opacity: 0.85; pointer-events: none; z-index: 5;
+}
+.corner.tl { top:-2px; left:-2px; border-right:none; border-bottom:none; }
+.corner.tr { top:-2px; right:-2px; border-left:none; border-bottom:none; }
+.corner.bl { bottom:-2px; left:-2px; border-right:none; border-top:none; }
+.corner.br { bottom:-2px; right:-2px; border-left:none; border-top:none; }
+
+/* ── HUD ─────────────────────────────────────────────────────── */
+/* Las fuentes usan clamp() para escalar con el viewport width. */
+.hud {
+  position: absolute;
+  inset: clamp(6px,1.2vw,14px) clamp(6px,1.2vw,14px) auto clamp(6px,1.2vw,14px);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: clamp(4px, 1vw, 10px);
+  pointer-events: none;
+  z-index: 4;
+}
+
+.hud-panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  padding: clamp(5px,1vw,8px) clamp(8px,1.5vw,14px);
+  backdrop-filter: blur(2px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: clamp(70px,14vw,110px);
+}
+.score-panel, .wave-panel { align-items: center; min-width: clamp(60px,11vw,90px); }
+
+.hud-label {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: clamp(0.5rem, 1.2vw, 0.65rem);
+  letter-spacing: 2px;
+  color: var(--text-dim);
+}
+.hud-value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(0.9rem, 2.2vw, 1.4rem);
+  color: var(--text-light);
+  text-shadow: 0 0 6px rgba(46,230,255,0.7), 0 0 16px rgba(46,230,255,0.35);
+}
+.score-value {
+  color: var(--crimson-soft);
+  text-shadow: 0 0 6px rgba(255,39,65,0.9), 0 0 18px rgba(255,39,65,0.5);
+}
+.hud-best {
+  font-size: clamp(0.48rem, 1.1vw, 0.62rem);
+  letter-spacing: 1px;
+  color: var(--gold);
+  font-family: var(--font-body);
+  font-weight: 700;
+}
+.hud-recon {
+  font-size: clamp(0.44rem, 1vw, 0.58rem);
+  letter-spacing: 1px;
+  color: var(--cyan);
+  font-family: var(--font-body);
+  font-weight: 600;
+  margin-top: 1px;
+  animation: reconBlink 2s ease-in-out infinite;
+}
+@keyframes reconBlink { 0%,100%{opacity:.85} 50%{opacity:.4} }
+
+.health-bar-track {
+  width: clamp(72px, 15vw, 130px);
+  height: clamp(7px, 1.5vw, 10px);
+  margin: 4px 0;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,39,65,0.4);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.health-bar-fill {
+  height: 100%; width: 100%;
+  background: linear-gradient(90deg,var(--crimson-dim),var(--crimson) 60%,var(--crimson-soft));
+  box-shadow: 0 0 8px rgba(255,39,65,0.8);
+  transition: width 0.15s linear;
+}
+
+/* ── Viñeta de peligro ───────────────────────────────────────── */
+.danger-vignette {
+  position: absolute; inset: 0;
+  pointer-events: none; z-index: 3; opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.danger-vignette.active {
+  opacity: 1;
+  animation: heartbeat 0.9s ease-in-out infinite;
+}
+@keyframes heartbeat {
+  0%,100%{ box-shadow: inset 0 0 80px rgba(255,10,30,0.35); }
+  50%    { box-shadow: inset 0 0 140px rgba(255,10,30,0.65); }
+}
+
+/* ── Overlays genéricos ──────────────────────────────────────── */
+.overlay-screen {
+  position: absolute; inset: 0; z-index: 10;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: clamp(8px, 1.5vh, 12px);
+  padding: clamp(14px, 3vw, 24px);
+  background: rgba(8,8,10,0.93);
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.25s ease;
+  text-align: center;
+  overflow-y: auto;
+}
+.overlay-screen.visible { opacity: 1; visibility: visible; }
+
+.overlay-title {
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 4vw, 1.7rem);
+  letter-spacing: clamp(2px, 0.8vw, 4px);
+  color: var(--text-light);
+  text-shadow: 0 0 8px rgba(46,230,255,0.7), 0 0 22px rgba(46,230,255,0.35);
+}
+.overlay-title.danger {
+  color: var(--crimson);
+  text-shadow: 0 0 10px rgba(255,39,65,0.9), 0 0 30px rgba(255,39,65,0.5);
+}
+.overlay-label {
+  font-weight: 600; letter-spacing: 2px;
+  color: var(--text-dim);
+  font-size: clamp(0.72rem, 1.5vw, 0.85rem);
+}
+.controls-list {
+  list-style: none;
+  display: flex; flex-direction: column;
+  gap: clamp(3px, 0.8vh, 5px);
+  color: var(--text-light);
+  font-size: clamp(0.72rem, 1.8vw, 0.88rem);
+}
+.controls-list strong { color: var(--cyan); }
+.final-score {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
+  font-weight: 700; color: var(--text-light);
+  text-shadow: 0 0 8px rgba(46,230,255,0.7);
+}
+.record-line {
+  color: var(--text-dim); font-weight: 600;
+  font-size: clamp(0.75rem, 1.8vw, 0.88rem); letter-spacing: 1px;
+}
+.record-line span { color: var(--gold); font-family: var(--font-display); }
+.new-record-line {
+  display: none; color: var(--gold);
+  font-family: var(--font-display);
+  font-size: clamp(0.8rem, 2.2vw, 1rem);
+  font-weight: 700; letter-spacing: 3px;
+  animation: recPulse 0.6s ease-in-out infinite alternate;
+}
+@keyframes recPulse {
+  from{ text-shadow: 0 0 8px rgba(255,215,0,0.7); }
+  to  { text-shadow: 0 0 22px rgba(255,215,0,1), 0 0 44px rgba(255,215,0,0.5); }
+}
+.evolution-hint {
+  font-size: clamp(0.65rem, 1.5vw, 0.75rem);
+  color: var(--text-dim); font-style: italic;
+  max-width: 320px; line-height: 1.5;
+}
+
+/* ── Pantalla de selección de personaje ─────────────────────── */
+.select-overlay {
+  justify-content: flex-start;
+  overflow-y: auto;
+  padding: clamp(12px, 2.5vw, 18px) clamp(10px, 2vw, 16px) 24px;
+  gap: clamp(6px, 1.2vh, 10px);
+}
+.hs-display {
+  color: var(--text-dim); font-size: clamp(0.72rem, 1.8vw, 0.82rem);
+  font-weight: 600; letter-spacing: 1px;
+}
+.hs-display span { color: var(--cyan); font-family: var(--font-display); }
+
+.char-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(6px, 1.5vw, 10px);
+  width: 100%;
+  max-width: 640px;
+}
+.char-card {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 5px; padding: clamp(6px, 1.5vw, 10px) clamp(4px, 1vw, 8px);
+  background: rgba(18,18,30,0.9);
+  border: 2px solid rgba(255,255,255,0.1);
+  border-radius: 7px;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+}
+.char-card.unlocked { cursor: pointer; }
+.char-card.unlocked:hover {
+  border-color: rgba(255,39,65,0.5);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(255,39,65,0.22);
+}
+.char-card.selected {
+  border-color: var(--crimson);
+  box-shadow: 0 0 18px rgba(255,39,65,0.55), inset 0 0 14px rgba(255,39,65,0.07);
+}
+.char-card.locked { opacity: 0.45; filter: grayscale(0.7); cursor: not-allowed; }
+.char-preview { display: block; border-radius: 5px; border: 1px solid rgba(255,255,255,0.07); }
+.char-info { display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; }
+.char-name {
+  font-family: var(--font-display);
+  font-size: clamp(0.55rem, 1.2vw, 0.68rem);
+  font-weight: 700; letter-spacing: 1px; color: var(--text-light);
+}
+.char-req { font-size: clamp(0.52rem, 1.1vw, 0.65rem); font-weight: 600; letter-spacing: 0.5px; }
+.char-req.req-ok     { color: #66bb6a; }
+.char-req.req-locked { color: var(--text-dim); }
+.char-desc { font-size: clamp(0.5rem, 1vw, 0.62rem); color: var(--text-dim); }
+
+/* ── Botones ─────────────────────────────────────────────────── */
+.btn-group { display: flex; flex-direction: column; align-items: center; gap: clamp(6px, 1.2vh, 8px); }
+
+.primary-btn, .secondary-btn, .ghost-btn, .mute-btn {
+  font-family: var(--font-body);
+  font-weight: 700; letter-spacing: 2px;
+  cursor: pointer; border-radius: 3px;
+  transition: background 0.15s, box-shadow 0.15s, border-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.primary-btn {
+  font-size: clamp(0.8rem, 2.2vw, 0.95rem);
+  padding: clamp(8px, 1.5vw, 10px) clamp(18px, 4vw, 28px);
+  background: transparent; color: var(--text-light);
+  border: 2px solid var(--crimson);
+}
+.primary-btn:hover, .primary-btn:focus-visible, .primary-btn:active {
+  background: rgba(255,39,65,0.15);
+  box-shadow: 0 0 16px rgba(255,39,65,0.6); outline: none;
+}
+.secondary-btn {
+  font-size: clamp(0.72rem, 1.8vw, 0.85rem);
+  padding: clamp(6px, 1.2vw, 8px) clamp(14px, 3vw, 22px);
+  background: transparent; color: var(--text-dim);
+  border: 2px solid rgba(255,255,255,0.22);
+}
+.secondary-btn:hover, .secondary-btn:focus-visible, .secondary-btn:active {
+  color: var(--text-light); border-color: var(--cyan);
+  box-shadow: 0 0 14px rgba(46,230,255,0.35); outline: none;
+}
+.ghost-btn {
+  font-size: clamp(0.65rem, 1.6vw, 0.75rem);
+  padding: clamp(5px, 1vw, 7px) clamp(10px, 2.5vw, 16px);
+  background: var(--panel-bg); color: var(--text-light);
+  border: 1px solid var(--panel-border);
+}
+.ghost-btn:hover, .ghost-btn:focus-visible, .ghost-btn:active {
+  border-color: var(--crimson);
+  box-shadow: 0 0 12px rgba(255,39,65,0.45); outline: none;
+}
+
+/* ── Botón de sonido ────────────────────────────────────────── */
+.mute-btn {
+  font-size: clamp(0.6rem, 1.4vw, 0.72rem);
+  padding: clamp(5px, 1vw, 7px) clamp(10px, 2.5vw, 16px);
+  background: var(--panel-bg); color: var(--cyan);
+  border: 1px solid rgba(46,230,255,0.35);
+  white-space: nowrap;
+}
+.mute-btn:hover, .mute-btn:active {
+  border-color: var(--cyan);
+  box-shadow: 0 0 10px rgba(46,230,255,0.4);
+}
+.mute-btn.muted {
+  color: var(--text-dim);
+  border-color: rgba(255,255,255,0.15);
+}
+
+/* ── Barra inferior (acciones + mute) ──────────────────────── */
+.bottom-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.action-bar { display: flex; gap: 8px; }
+.action-bar.hidden { display: none; }
+
+/* ── Pie de página ───────────────────────────────────────────── */
+.controls-hint {
+  font-size: clamp(0.62rem, 1.5vw, 0.78rem);
+  letter-spacing: 0.5px; color: var(--text-dim); text-align: center;
+}
+
+/* ── Controles táctiles: joystick + botón de disparo ────────── */
+.mobile-controls {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: clamp(120px, 22vw, 160px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 clamp(12px, 3vw, 24px) clamp(10px, 2.5vw, 18px);
+  pointer-events: none;
+  z-index: 6;
+  opacity: 0; visibility: hidden;
+}
+
+.joystick-zone {
+  pointer-events: all;
+  display: flex; align-items: center; justify-content: center;
+  width: clamp(90px, 16vw, 120px);
+  height: clamp(90px, 16vw, 120px);
+  touch-action: none;
+}
+.joystick-base {
+  position: relative;
+  width: clamp(78px, 13vw, 100px);
+  height: clamp(78px, 13vw, 100px);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+  border: 2.5px solid rgba(255,39,65,0.55);
+  box-shadow: 0 0 18px rgba(255,39,65,0.2), inset 0 0 14px rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+}
+.joystick-knob {
+  position: absolute;
+  width: clamp(34px, 5.5vw, 46px);
+  height: clamp(34px, 5.5vw, 46px);
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 38%, rgba(255,91,110,0.95) 0%, rgba(180,0,30,0.9) 100%);
+  border: 2px solid rgba(255,255,255,0.3);
+  box-shadow: 0 0 14px rgba(255,39,65,0.7), 0 3px 8px rgba(0,0,0,0.5);
+  transform: translate(0,0);
+  will-change: transform;
+}
+.fire-button {
+  pointer-events: all;
+  touch-action: none;
+  width: clamp(70px, 13vw, 90px);
+  height: clamp(70px, 13vw, 90px);
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 38%, rgba(255,39,65,0.85) 0%, rgba(120,0,20,0.9) 100%);
+  border: 3px solid rgba(255,255,255,0.35);
+  box-shadow: 0 0 22px rgba(255,39,65,0.65), 0 4px 12px rgba(0,0,0,0.5);
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: clamp(0.48rem, 1.2vw, 0.58rem);
+  font-weight: 700; letter-spacing: 1.5px;
+  color: #fff;
+  text-shadow: 0 0 6px rgba(255,200,200,0.9);
+  transition: transform 0.08s, box-shadow 0.08s;
+  -webkit-tap-highlight-color: transparent;
+}
+.fire-button.pressed, .fire-button:active {
+  transform: scale(0.91);
+  box-shadow: 0 0 10px rgba(255,39,65,0.4), 0 2px 6px rgba(0,0,0,0.4);
+}
+
+/* ── Mostrar controles táctiles SOLO en dispositivos táctiles ── */
+@media (hover: none) and (pointer: coarse) {
+  .mobile-controls { opacity: 1; visibility: visible; }
+
+  /* En móvil: ocultar título y footer para maximizar el canvas */
+  .game-title    { display: none; }
+  .controls-hint { display: none; }
+  .game-wrapper  { padding: 4px; gap: 4px; }
+
+  /* canvas ocupa todo el ancho */
+  .canvas-frame { width: min(800px, 100vw - 8px); }
+}
+
+/* ── Accesibilidad ───────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .danger-vignette.active { animation: none; box-shadow: inset 0 0 100px rgba(255,10,30,0.5); }
+  .new-record-line        { animation: none; text-shadow: 0 0 14px rgba(255,215,0,0.9); }
+  .hud-recon              { animation: none; opacity: 0.85; }
+}
+
+/* ── Landscape muy pequeño (ej: iPhone 8 en horizontal) ─────── */
+@media (max-height: 420px) {
+  .select-overlay { padding-top: 8px; gap: 6px; }
+  .char-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .char-preview { width: 52px !important; height: 52px !important; }
+  .overlay-title { font-size: clamp(0.9rem, 3.5vw, 1.3rem); }
+}
